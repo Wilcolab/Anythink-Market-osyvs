@@ -10,7 +10,9 @@ DATABASE_URL = os.environ['DATABASE_URL'].replace("postgres://", "postgresql://"
 
 engine = create_engine(DATABASE_URL, echo=False)
 
-user_insert_statement = text("""INSERT INTO users(username, email, salt, bio, hashed_password) VALUES(:username, :email, :salt, :bio, :hashed_password)""")
+user_insert_statement = text("""INSERT INTO users(username, email, salt, bio, hashed_password)
+                            VALUES(:username, :email, :salt, :bio, :hashed_password)
+                            """)
 select_last_user_id = text("""SELECT * FROM users ORDER BY id DESC LIMIT 1""")
 select_last_item_id = text("""SELECT * FROM items ORDER BY id DESC LIMIT 1""")
 item_statement = text("""INSERT INTO items(slug, title, description, seller_id) 
@@ -69,5 +71,5 @@ def create_user_and_item(con, slug):
 
 
 with engine.connect() as con:
-    for i in range(101,200):
+    for i in range(100):
         create_user_and_item(con, "test item " + str(i))
