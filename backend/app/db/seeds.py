@@ -10,22 +10,31 @@ DATABASE_URL = os.environ['DATABASE_URL'].replace("postgres://", "postgresql://"
 
 engine = create_engine(DATABASE_URL, echo=False)
 
-user_insert_statement = text("""INSERT INTO users(username, email, salt, bio, hashed_password)
+#Prepare SQL statements for insertion into database
+user_insert_statement = text("""
+                            INSERT INTO users(username, email, salt, bio, hashed_password)
                             VALUES(:username, :email, :salt, :bio, :hashed_password)
                             """)
-select_last_user_id = text("""SELECT * FROM users ORDER BY id DESC LIMIT 1""")
-select_last_item_id = text("""SELECT * FROM items ORDER BY id DESC LIMIT 1""")
-item_statement = text("""INSERT INTO items(slug, title, description, seller_id) 
+select_last_user_id = text("""
+                        SELECT * FROM users 
+                        ORDER BY id DESC LIMIT 1
+                        """)
+select_last_item_id = text("""
+                        SELECT * FROM items 
+                        ORDER BY id DESC LIMIT 1
+                        """)
+item_statement = text("""
+                    INSERT INTO items(slug, title, description, seller_id) 
                     VALUES(:slug, :title, :description, :seller_id)
                     """)
 comment_statement = text("""
-            INSERT INTO comments (body, seller_id, item_id) 
-            VALUES (:body, :seller_id, :item_id)
-            """)
+                        INSERT INTO comments (body, seller_id, item_id) 
+                        VALUES (:body, :seller_id, :item_id)
+                        """)
 
-letters = string.ascii_lowercase
-
-def create_user_and_item(con, slug):
+#Python function to create a user, item, and comment in the local database
+#Takes in a database connection and text for the slug
+def create_user_item_comment(con, slug):
     username_length = random.randint(10,15)
     random_username = ''.join(random.choice(string.ascii_lowercase + string.ascii_uppercase) for i in range(username_length))
 
@@ -36,9 +45,10 @@ def create_user_and_item(con, slug):
         'bio': 'bio',
         'hashed_password': '12345689',
     }
-
+    #Add the user to the database
     con.execute(user_insert_statement, **user)
 
+    #Fetch the new user ID from the database
     user_id_result = con.execute(select_last_user_id)
 
     generated_user_id = None
@@ -52,8 +62,10 @@ def create_user_and_item(con, slug):
         'seller_id': generated_user_id
      }
 
+    #Add the item to the database
     con.execute(item_statement, **item)
 
+    #Fetch the new item ID from the database
     item_id_result = con.execute(select_last_item_id)
 
     generated_item_id = None
@@ -66,10 +78,9 @@ def create_user_and_item(con, slug):
         'item_id' : generated_item_id,
     }
 
+    #Add the comment to the database
     con.execute(comment_statement, **comment)
-
-
 
 with engine.connect() as con:
     for i in range(100):
-        create_user_and_item(con, "test item " + str(i))
+        create_user_item_comment(con, "test item " + str(i))
