@@ -10,15 +10,15 @@ import os
 #find database connection URL
 DATABASE_URL = os.environ['DATABASE_URL'].replace("postgres://", "postgresql://")
 
-engine = create_engine(database_url, echo=False)
+engine = create_engine(DATABASE_URL, echo=False)
 
-user_insert_statement = text("""INSERT INTO users(username, email, salt, bio, hashed_password, is_verified) VALUES(:username, :email, :salt, :bio, :hashed_password, :is_verified)""")
+user_insert_statement = text("""INSERT INTO users(username, email, salt, bio, hashed_password) VALUES(:username, :email, :salt, :bio, :hashed_password)""")
 select_last_user_id = text("""SELECT * FROM users ORDER BY id DESC LIMIT 1""")
 item_statement = text("""INSERT INTO items(slug, title, description, seller_id) VALUES(:slug, :title, :description, :seller_id)""")
 
 letters = string.ascii_lowercase
 
-def create_user_and_item(con, slug, is_verified):
+def create_user_and_item(con, slug):
     username_length = random.randint(10,15)
     random_username = ''.join(random.choice(string.ascii_lowercase + string.ascii_uppercase) for i in range(username_length))
 
@@ -28,7 +28,6 @@ def create_user_and_item(con, slug, is_verified):
         'salt': 'abc',
         'bio': 'bio',
         'hashed_password': '12345689',
-        'is_verified': is_verified
     }
 
     con.execute(user_insert_statement, **user)
@@ -49,5 +48,5 @@ def create_user_and_item(con, slug, is_verified):
     con.execute(item_statement, **item)
 
 with engine.connect() as con:
-    create_user_and_item(con, 'verified_seller_item', True)
-    create_user_and_item(con, 'not_verified_seller_item', False)
+    for i in range(100):
+        create_user_and_item(con, "test item " + str(i))
